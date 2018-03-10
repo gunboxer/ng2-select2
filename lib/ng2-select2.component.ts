@@ -29,7 +29,7 @@ export class Select2Component implements AfterViewInit, OnDestroy, OnInit {
             this.initPlugin();
 
             if (this.autoSelect) {
-                this.emitValue(this.element.val());
+                this.value = this.element.val();
             }
         }
     }
@@ -51,8 +51,8 @@ export class Select2Component implements AfterViewInit, OnDestroy, OnInit {
                 for (const id in this.data) {
                     if (this.data[id].id === newValue) {
                         this.entity = this.data[id];
+                        break;
                     }
-                    break;
                 }
             }
             this.emitValue(newValue);
@@ -144,7 +144,7 @@ export class Select2Component implements AfterViewInit, OnDestroy, OnInit {
         }
 
         this.element.on('select2:select select2:unselect', () => {
-            this.emitValue(this.element.val());
+            this.value = this.element.val();
         });
     }
 
@@ -154,7 +154,7 @@ export class Select2Component implements AfterViewInit, OnDestroy, OnInit {
 
     private emitValue(newValue: string) {
         this.valueChange.emit(newValue);
-        this.entityChange.emit(this.entity)
+        this.entityChange.emit(this.entity);
         this.valueChanged.emit({
             value: newValue,
             data: this.element.select2('data')
