@@ -23,8 +23,8 @@
   },
   "homepage": "https://github.com/NejcZdovc/ng2-select2",
   "scripts": {
-    "finish": "move /Y lib\\ng2-select2.component.ts.bak lib\\ng2-select2.component.ts && copy README.md dist",
-    "build": "rimraf dist && ts-node tools\\inline-styles.ts && tsc -p tsconfig-esm.json && rollup -c rollup.config.js dist\\ng2-select2.js > dist\\ng2-select2.bundle.js && copy package.json dist && ts-node tools\\cleanup.ts && ngc -c tsconfig-esm.json && npm run finish"
+    "finish": "copy README.md dist",
+    "build": "rimraf dist && tsc -p tsconfig-esm.json && rollup -c rollup.config.js dist\\ng2-select2.js > dist\\ng2-select2.bundle.js && copy package.json dist && ts-node tools\\cleanup.ts && ngc -c tsconfig-esm.json && npm run finish"
   },
   "dependencies": {
     "@types/jquery": "^2.0.39",
