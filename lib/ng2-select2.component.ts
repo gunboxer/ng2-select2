@@ -1,6 +1,6 @@
 import {
     AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, OnDestroy,
-    Output, ViewChild, ViewEncapsulation, Renderer, OnInit
+    Output, ViewChild, ViewEncapsulation, Renderer
 } from '@angular/core';
 
 import { S2Option } from './ng2-select2.interface';
@@ -15,7 +15,7 @@ import { S2Option } from './ng2-select2.interface';
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class Select2Component implements AfterViewInit, OnDestroy, OnInit {
+export class Select2Component implements AfterViewInit, OnDestroy {
     @ViewChild('selector') selector: ElementRef;
 
     // data for select2 drop down
@@ -79,9 +79,6 @@ export class Select2Component implements AfterViewInit, OnDestroy, OnInit {
         return this._entity;
     }
 
-    // enable / disable default style for select2
-    @Input() cssImport: boolean = false;
-
     // width of select2 input
     @Input() width: string;
 
@@ -120,20 +117,6 @@ export class Select2Component implements AfterViewInit, OnDestroy, OnInit {
     private check: boolean = false;
 
     constructor(private renderer: Renderer) { }
-
-    ngOnInit() {
-        if(this.cssImport) {
-            const head = document.getElementsByTagName('head')[0];
-            const link: any = head.children[head.children.length-1];
-
-            if(!link.version) {
-                const newLink = this.renderer.createElement(head, 'style');
-                this.renderer.setElementProperty(newLink, 'type', 'text/css');
-                this.renderer.setElementProperty(newLink, 'version', 'select2');
-                this.renderer.setElementProperty(newLink, 'innerHTML', this.style);
-            }
-        }
-    }
 
     ngAfterViewInit() {
         this.element = jQuery(this.selector.nativeElement);
@@ -237,6 +220,4 @@ export class Select2Component implements AfterViewInit, OnDestroy, OnInit {
 
         this.element.trigger('change.select2');
     }
-
-    private style: string = `CSS`;
 }
