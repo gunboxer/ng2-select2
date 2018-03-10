@@ -1,9 +1,9 @@
 import {
-    AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy,
-    Output, SimpleChanges, ViewChild, ViewEncapsulation, Renderer, OnInit
+    AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, OnDestroy,
+    Output, ViewChild, ViewEncapsulation, Renderer, OnInit
 } from '@angular/core';
 
-import { Select2OptionData } from './ng2-select2.interface';
+import { S2Option } from './ng2-select2.interface';
 
 @Component({
     selector: 'select2',
@@ -15,14 +15,69 @@ import { Select2OptionData } from './ng2-select2.interface';
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class Select2Component implements AfterViewInit, OnChanges, OnDestroy, OnInit {
+export class Select2Component implements AfterViewInit, OnDestroy, OnInit {
     @ViewChild('selector') selector: ElementRef;
 
     // data for select2 drop down
-    @Input() data: Array<Select2OptionData>;
+    _data: Array<S2Option>;
+    @Input() set data(data: Array<S2Option>) {
+        if (this._data === data || (data === undefined && this._data === undefined)) {
+            return;
+        }
+        this._data = data;
+        if(this.element) {
+            this.initPlugin();
+
+            if (this.autoSelect) {
+                this.emitValue(this.element.val());
+            }
+        }
+    }
+    get data(): Array<S2Option> {
+        return this._data;
+    }
 
     // value for select2
-    @Input() value: string | string[];
+    _value: string ;
+    @Input() set value(value: string ) {
+        if (this._value === value || (value === undefined && this._value === undefined)) {
+            return;
+        }
+        this._value = value;
+        if(this.element) {
+            const newValue: string  = value;
+            this.setElementValue(newValue);
+            if (!this.entity || this.entity.id !== newValue) {
+                for (const id in this.data) {
+                    if (this.data[id].id === newValue) {
+                        this.entity = this.data[id];
+                    }
+                    break;
+                }
+            }
+            this.emitValue(newValue);
+        }
+    }
+    get value(): string  {
+        return this._value;
+    }
+
+    _entity: S2Option;
+    @Input() set entity(entity: S2Option) {
+        if (this._entity === entity || (entity === undefined && this._entity === undefined)) {
+            return;
+        }
+        this._entity = entity;
+        if(this.element) {
+            const newValue: S2Option = entity;
+            if (this.value !== newValue.id) {
+                this.value = newValue.id;
+            }
+        }
+    }
+    get entity(): S2Option {
+        return this._entity;
+    }
 
     // enable / disable default style for select2
     @Input() cssImport: boolean = false;
@@ -31,13 +86,35 @@ export class Select2Component implements AfterViewInit, OnChanges, OnDestroy, On
     @Input() width: string;
 
     // enable / disable select2
-    @Input() disabled: boolean = false;
+    _disabled: boolean = false;
+    @Input() set disabled(disabled: boolean) {
+        this._disabled = disabled;
+        if(this.element) {
+            this.renderer.setElementProperty(this.selector.nativeElement, 'disabled', disabled);
+        }
+    }
+    get disabled(): boolean {
+        return this._disabled;
+    }
 
     // all additional options
     @Input() options: Select2Options;
 
+    @Input() idProperty: string | undefined;
+
+    @Input() textProperty: string | undefined;
+
+    @Input() idGetter: Function | undefined;
+
+    @Input() textGetter: Function | undefined;
+
+    @Input() public autoSelect = true;
+
     // emitter when value is changed
-    @Output() valueChanged = new EventEmitter();
+    @Output() valueChanged = new EventEmitter<{value: string , data: any}>();
+
+    @Output() valueChange = new EventEmitter<string >();
+    @Output() entityChange = new EventEmitter<S2Option | S2Option[]>();
 
     private element: JQuery = undefined;
     private check: boolean = false;
@@ -55,38 +132,6 @@ export class Select2Component implements AfterViewInit, OnChanges, OnDestroy, On
                 this.renderer.setElementProperty(newLink, 'version', 'select2');
                 this.renderer.setElementProperty(newLink, 'innerHTML', this.style);
             }
-
-        }
-    }
-
-    ngOnChanges(changes: SimpleChanges) {
-        if(!this.element) {
-            return;
-        }
-
-        if(changes['data'] && JSON.stringify(changes['data'].previousValue) !== JSON.stringify(changes['data'].currentValue)) {
-            this.initPlugin();
-
-            const newValue: string = this.element.val();
-            this.valueChanged.emit({
-                value: newValue,
-                data: this.element.select2('data')
-            });
-        }
-
-        if(changes['value'] && changes['value'].previousValue !== changes['value'].currentValue) {
-            const newValue: string = changes['value'].currentValue;
-
-            this.setElementValue(newValue);
-
-            this.valueChanged.emit({
-                value: newValue,
-                data: this.element.select2('data')
-            });
-        }
-
-        if(changes['disabled'] && changes['disabled'].previousValue !== changes['disabled'].currentValue) {
-            this.renderer.setElementProperty(this.selector.nativeElement, 'disabled', this.disabled);
         }
     }
 
@@ -99,15 +144,21 @@ export class Select2Component implements AfterViewInit, OnChanges, OnDestroy, On
         }
 
         this.element.on('select2:select select2:unselect', () => {
-            this.valueChanged.emit({
-                value: this.element.val(),
-                data: this.element.select2('data')
-            });
+            this.emitValue(this.element.val());
         });
     }
 
     ngOnDestroy() {
         this.element.off("select2:select");
+    }
+
+    private emitValue(newValue: string) {
+        this.valueChange.emit(newValue);
+        this.entityChange.emit(this.entity)
+        this.valueChanged.emit({
+            value: newValue,
+            data: this.element.select2('data')
+        });
     }
 
     private initPlugin() {
@@ -126,9 +177,16 @@ export class Select2Component implements AfterViewInit, OnChanges, OnDestroy, On
             this.renderer.setElementProperty(this.selector.nativeElement, 'innerHTML', '');
         }
 
+        this.initIdText();
+        if ((!this.options || !this.options.placeholder) && !this.autoSelect) {
+            this.options = this.options ? this.options : {};
+            this.options.placeholder = ' ';
+            this.renderer.createElement(this.selector.nativeElement, 'option')
+        }
+
         let options: Select2Options = {
             data: this.data,
-            width: (this.width) ? this.width : 'resolve'
+            width: (this.width) ? this.width : 'resolve',
         };
 
         Object.assign(options, this.options);
@@ -151,7 +209,22 @@ export class Select2Component implements AfterViewInit, OnChanges, OnDestroy, On
         }
     }
 
-    private setElementValue (newValue: string | string[]) {
+    private initIdText() {
+        if (this.idProperty) {
+            this.data.forEach(prop => prop.id = prop[this.idProperty]);
+        }
+        if (this.idGetter) {
+            this.data.forEach(prop => prop.id = this.idGetter(prop));
+        }
+        if (this.textProperty) {
+            this.data.forEach(prop => prop.text = prop[this.textProperty]);
+        }
+        if (this.textGetter) {
+            this.data.forEach(prop => prop.text = this.textGetter(prop));
+        }
+    }
+
+    private setElementValue (newValue: string) {
         if(Array.isArray(newValue)) {
             for (let option of this.selector.nativeElement.options) {
                 if (newValue.indexOf(option.value) > -1) {

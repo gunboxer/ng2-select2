@@ -1,11 +1,8 @@
-export interface Select2OptionData {
-    id: string;
-    text: string;
-    disabled?: boolean;
-    children?: Array<Select2OptionData>;
-    additional?: any;
+export interface S2Option extends Select2SelectionObject {
+    children?: Array<S2Option>;
+    fixed: boolean;
 }
 
 export interface Select2TemplateFunction {
-    (state: Select2OptionData): JQuery | string;
+    (state: S2Option): JQuery | string;
 }

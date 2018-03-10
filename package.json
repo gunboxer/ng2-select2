@@ -23,8 +23,8 @@
   },
   "homepage": "https://github.com/NejcZdovc/ng2-select2",
   "scripts": {
-    "finish": "mv lib/ng2-select2.component.ts.bak lib/ng2-select2.component.ts && cp README.md dist && rimraf dist/ng2-select2.component.css",
-    "build": "rimraf dist && ts-node tools/inline-styles.ts && tsc -p tsconfig-esm.json && rollup -c rollup.config.js dist/ng2-select2.js > dist/ng2-select2.bundle.js && cp package.json dist && ts-node tools/cleanup.ts && ngc -c tsconfig-esm.json && npm run finish"
+    "finish": "move /Y lib\\ng2-select2.component.ts.bak lib\\ng2-select2.component.ts && copy README.md dist",
+    "build": "rimraf dist && ts-node tools\\inline-styles.ts && tsc -p tsconfig-esm.json && rollup -c rollup.config.js dist\\ng2-select2.js > dist\\ng2-select2.bundle.js && copy package.json dist && ts-node tools\\cleanup.ts && ngc -c tsconfig-esm.json && npm run finish"
   },
   "dependencies": {
     "@types/jquery": "^2.0.39",
@@ -40,13 +40,13 @@
     "@angular/core": "^2.4.4",
     "@angular/platform-browser": "^2.4.4",
     "@angular/platform-browser-dynamic": "^2.4.4",
-    "@types/node": "^7.0.0",
+    "@types/node": "^9.4.7",
     "core-js": "^2.4.1",
     "rimraf": "^2.5.4",
     "rollup": "^0.41.4",
     "rxjs": "^5.0.3",
-    "ts-node": "^2.0.0",
-    "typescript": "^2.1.5",
+    "ts-node": "^5.0.1",
+    "typescript": "^2.7.2",
     "zone.js": "^0.7.4"
   }
 }
