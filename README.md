@@ -1,6 +1,8 @@
-# Angular wrapper for Select2 (ng2-select2)
+# Forked from [ng2-select](https://github.com/NejcZdovc/ng2-select2)
 
-[![npm version](https://badge.fury.io/js/ng2-select2.svg)](https://badge.fury.io/js/ng2-select2) [![MIT Licence](https://badges.frapsoft.com/os/mit/mit.svg?v=103)](https://opensource.org/licenses/mit-license.php)
+cd# Angular wrapper for Select2 (rselect2)
+
+[![npm version](https://badge.fury.io/js/rselect2.svg)](https://badge.fury.io/js/rselect2) [![MIT Licence](https://badges.frapsoft.com/os/mit/mit.svg?v=103)](https://opensource.org/licenses/mit-license.php)
 
 For Angular version 2.x.x and up
 
@@ -12,7 +14,7 @@ For this plugin to work you need to add two javascript libraries to your project
 - [Select2](https://select2.github.io/)
 
 First option and **preferred one** is to add libraries to your package builder.
-- You can find example of how to add libraries to the Angular CLI in [demo repository](https://github.com/NejcZdovc/ng2-select2-demo/blob/master/angular-cli.json#L24-L25). 
+- You can find example of how to add libraries to the Angular CLI in [demo repository](https://github.com/gunboxer/rselect2-demo/blob/master/angular-cli.json#L24-L25). 
 - You can also add it to [webpack directly](https://stackoverflow.com/questions/28969861/managing-jquery-plugin-dependency-in-webpack#answer-2898947). 
 
 Second option is to include libraries into your html head:
@@ -32,14 +34,14 @@ Second option is to include libraries into your html head:
 
 ## Installation
 
-Add package to your project `npm i -S ng2-select2` (this will save package to your `dependencies` in `package.json`)
+Add package to your project `npm i -S rselect2` (this will save package to your `dependencies` in `package.json`)
 
 
 ## Basic implementation
 
-1) Add declaration to [NgModule](https://github.com/NejcZdovc/ng2-select2-demo/blob/master/src/app/app.module.ts#L35)
+1) Add declaration to NgModule
 ```
-import { Select2Module } from 'ng2-select2';
+import { Select2Module } from 'rselect2';
 
 @NgModule({
   imports: [
@@ -50,9 +52,9 @@ import { Select2Module } from 'ng2-select2';
 })
 ```
 
-2) Add it to your [template](https://github.com/NejcZdovc/ng2-select2-demo/blob/master/src/app/demos/basic/basic.component.html#L3). You need to define at least `data` as `@Input`.
+2) Add it to your template. You need to define at least `data` as `@Input`.
 
-Example of `exampleData` can be found [here](https://github.com/NejcZdovc/ng2-select2-demo/blob/master/src/app/demos/basic/basic.component.ts#L13).
+Example of `exampleData`.
 
 ```
 <select2 [data]="exampleData"></select2>
@@ -62,7 +64,7 @@ Example of `exampleData` can be found [here](https://github.com/NejcZdovc/ng2-se
 ## Options
 
 ### Inputs
-* **data** `Array<Select2OptionData>`: Data used for generating select 2 - [inferface definition](https://github.com/NejcZdovc/ng2-select2/blob/master/lib/ng2-select2.interface.ts#L1)
+* **data** `Array<S2Option>`: Data used for generating select 2
 * **value** `string`: Default value for select 2
 * **cssImport** `boolean`: Disable or enable default style for select 2, default value is `false`
 * **width** `string`: Set width for the input, default value is `resolve`

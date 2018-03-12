@@ -3,10 +3,11 @@ import {
     Output, ViewChild, ViewEncapsulation, Renderer
 } from '@angular/core';
 
-import { S2Option } from './ng2-select2.interface';
+import { S2Option } from './rselect2.interface';
 
 @Component({
-    selector: 'select2',
+    selector: 'rselect2',
+    styles: ["CSS"],
     template: `
         <select #selector>
             <ng-content select="option, optgroup">
@@ -15,13 +16,13 @@ import { S2Option } from './ng2-select2.interface';
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class Select2Component implements AfterViewInit, OnDestroy {
+export class RSelect2Component implements AfterViewInit, OnDestroy {
     @ViewChild('selector') selector: ElementRef;
 
     // data for select2 drop down
     _data: Array<S2Option>;
     @Input() set data(data: Array<S2Option>) {
-        if (this._data === data || (data === undefined && this._data === undefined)) {
+        if (this._data === data || (data === undefined && this._data === undefined) || (data === null && this._data === null)) {
             return;
         }
         this._data = data;
@@ -40,23 +41,21 @@ export class Select2Component implements AfterViewInit, OnDestroy {
     // value for select2
     _value: string ;
     @Input() set value(value: string ) {
-        if (this._value === value || (value === undefined && this._value === undefined)) {
+        if (this._value === value || (value === undefined && this._value === undefined) || (value === null && this._value === null)) {
             return;
         }
         this._value = value;
-        if(this.element) {
-            const newValue: string  = value;
-            this.setElementValue(newValue);
-            if (!this.entity || this.entity.id !== newValue) {
-                for (const id in this.data) {
-                    if (this.data[id].id === newValue) {
-                        this.entity = this.data[id];
-                        break;
-                    }
+        const newValue: string  = value;
+        this.setElementValue(newValue);
+        if (!this.entity || this.getEntityId(this.entity) !== newValue) {
+            for (const id in this.data) {
+                if (this.getEntityId(this.data[id]) === newValue) {
+                    this.entity = this.data[id];
+                    break;
                 }
             }
-            this.emitValue(newValue);
         }
+        this.emitValue(newValue);
     }
     get value(): string  {
         return this._value;
@@ -64,14 +63,21 @@ export class Select2Component implements AfterViewInit, OnDestroy {
 
     _entity: S2Option;
     @Input() set entity(entity: S2Option) {
-        if (this._entity === entity || (entity === undefined && this._entity === undefined)) {
+        if (this._entity === entity || (entity === undefined && this._entity === undefined) || (entity === null && this._entity === null)) {
             return;
         }
         this._entity = entity;
-        if(this.element) {
-            const newValue: S2Option = entity;
-            if (this.value !== newValue.id) {
-                this.value = newValue.id;
+        const newValue: S2Option = entity;
+        if (!newValue) {
+            if ((this.value === undefined || this.value === null || this.value === '')) {
+                return;
+            } else {
+                this.value = null;
+            }
+        } else {
+            const entityId = this.getEntityId(newValue)
+            if (this.value !== entityId || (!this.value && !!entityId)) {
+                this.value = entityId;
             }
         }
     }
@@ -126,8 +132,15 @@ export class Select2Component implements AfterViewInit, OnDestroy {
             this.setElementValue(this.value);
         }
 
-        this.element.on('select2:select select2:unselect', () => {
-            this.value = this.element.val();
+        this.element.on('select2:select select2:unselect', (event: {type: string}) => {
+            switch (event.type) {
+                case 'select2:select':
+                    this.value = this.element.val();
+                    break;
+                case 'select2:unselect':
+                    this.value = null;
+                    break;
+            }
         });
     }
 
@@ -136,12 +149,14 @@ export class Select2Component implements AfterViewInit, OnDestroy {
     }
 
     private emitValue(newValue: string) {
-        this.valueChange.emit(newValue);
-        this.entityChange.emit(this.entity);
-        this.valueChanged.emit({
-            value: newValue,
-            data: this.element.select2('data')
-        });
+        if (this.element) {
+            this.valueChange.emit(newValue);
+            this.entityChange.emit(this.entity);
+            this.valueChanged.emit({
+                value: newValue,
+                data: this.element.select2('data')
+            });
+        }
     }
 
     private initPlugin() {
@@ -160,11 +175,16 @@ export class Select2Component implements AfterViewInit, OnDestroy {
             this.renderer.setElementProperty(this.selector.nativeElement, 'innerHTML', '');
         }
 
-        this.initIdText();
-        if ((!this.options || !this.options.placeholder) && !this.autoSelect) {
-            this.options = this.options ? this.options : {};
-            this.options.placeholder = ' ';
-            this.renderer.createElement(this.selector.nativeElement, 'option')
+        if (this.data) {
+            this.initIdText();
+        }
+
+        if (!this.autoSelect) {
+            if ((!this.options || !this.options.placeholder)) {
+                this.options = this.options ? this.options : {};
+                this.options.placeholder = ' ';
+            }
+            this.renderer.createElement(this.selector.nativeElement, 'option');
         }
 
         let options: Select2Options = {
@@ -207,13 +227,22 @@ export class Select2Component implements AfterViewInit, OnDestroy {
         }
     }
 
+    private getEntityId(entity: S2Option): string {
+        if (this.idProperty) {
+            return entity[this.idProperty];
+        }
+        if (this.idGetter) {
+            return this.idGetter(entity);
+        }
+    }
+
     private setElementValue (newValue: string) {
         if(Array.isArray(newValue)) {
             for (let option of this.selector.nativeElement.options) {
                 if (newValue.indexOf(option.value) > -1) {
                     this.renderer.setElementProperty(option, 'selected', 'true');
                 }
-           }
+            }
         } else {
             this.renderer.setElementProperty(this.selector.nativeElement, 'value', newValue);
         }

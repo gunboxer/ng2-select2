@@ -1,6 +1,6 @@
 export default {
     format: 'umd',
-    moduleName: 'ng2-select2',
+    moduleName: 'rselect2',
     external: [
         '@angular/core',
         '@angular/common'

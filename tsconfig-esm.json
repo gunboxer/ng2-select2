@@ -15,6 +15,6 @@
     "node_modules"
   ],
   "files": [
-    "./lib/ng2-select2.ts"
+    "./lib/rselect2.ts"
   ]
 }
