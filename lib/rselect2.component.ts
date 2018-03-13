@@ -86,7 +86,13 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
     }
 
     // width of select2 input
-    @Input() width: string;
+    _width: string;
+    @Input() set width(width: string) {
+        this._width = width;
+    }
+    get width(): string {
+        return this._width
+    }
 
     // enable / disable select2
     _disabled: boolean = false;
@@ -101,17 +107,53 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
     }
 
     // all additional options
-    @Input() options: Select2Options;
+    _options: Select2Options;
+    @Input() set options(options: Select2Options) {
+        this._options = options;
+    }
+    get options(): Select2Options {
+        return this._options
+    }
 
-    @Input() idProperty: string | undefined;
+    _idProperty: string | undefined;
+    @Input() set idProperty(idProperty: string | undefined) {
+        this._idProperty = idProperty;
+    }
+    get idProperty(): string | undefined {
+        return this._idProperty
+    }
 
-    @Input() textProperty: string | undefined;
+    _textProperty: string | undefined;
+    @Input() set textProperty(textProperty: string | undefined) {
+        this._textProperty = textProperty;
+    }
+    get textProperty(): string | undefined {
+        return this._textProperty
+    }
 
-    @Input() idGetter: Function | undefined;
+    _idGetter: Function | undefined;
+    @Input() set idGetter(idGetter: Function | undefined) {
+        this._idGetter = idGetter;
+    }
+    get idGetter(): Function | undefined {
+        return this._idGetter
+    }
 
-    @Input() textGetter: Function | undefined;
+    _textGetter: Function | undefined;
+    @Input() set textGetter(textGetter: Function | undefined) {
+        this._textGetter = textGetter;
+    }
+    get textGetter(): Function | undefined {
+        return this._textGetter
+    }
 
-    @Input() public autoSelect = true;
+    _autoSelect = true;
+    @Input() set autoSelect(autoSelect: boolean) {
+        this._autoSelect = autoSelect;
+    }
+    get autoSelect(): boolean {
+        return this._autoSelect
+    }
 
     // emitter when value is changed
     @Output() valueChanged = new EventEmitter<{value: string , data: any}>();
@@ -207,6 +249,10 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
             this.element.select2(options);
         }
 
+        if (this.entity && this.value === undefined) {
+            this.value = this.getEntityId(this.entity);
+        }
+
         if(this.disabled) {
             this.renderer.setElementProperty(this.selector.nativeElement, 'disabled', this.disabled);
         }
@@ -234,6 +280,7 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
         if (this.idGetter) {
             return this.idGetter(entity);
         }
+        return entity.id;
     }
 
     private setElementValue (newValue: string) {
