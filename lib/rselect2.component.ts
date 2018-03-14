@@ -184,6 +184,15 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
                     break;
             }
         });
+        this.element.on('select2:unselecting', () => {
+            this.element.data('s2state', 'unselected');
+        });
+        this.element.on('select2:opening', (e) => {
+            if (this.element.data('s2state') === 'unselected') {
+                this.element.removeData('s2state');
+                e.preventDefault();
+            }
+        });
     }
 
     ngOnDestroy() {
