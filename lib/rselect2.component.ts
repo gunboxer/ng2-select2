@@ -47,6 +47,9 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
         this._value = value;
         const newValue: string  = value;
         this.setElementValue(newValue);
+        if (this.entity && !newValue) {
+            this.entity = null;
+        }
         if (!this.entity || this.getEntityId(this.entity) !== newValue) {
             for (const id in this.data) {
                 if (this.getEntityId(this.data[id]) === newValue) {
@@ -75,7 +78,7 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
                 this.value = null;
             }
         } else {
-            const entityId = this.getEntityId(newValue)
+            const entityId = this.getEntityId(newValue);
             if (this.value !== entityId || (!this.value && !!entityId)) {
                 this.value = entityId;
             }

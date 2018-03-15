@@ -1,6 +1,6 @@
 {
   "name": "rselect2",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Angular2 wrapper for select2",
   "main": "rselect2.bundle.js",
   "jsnext:main": "rselect2.js",
