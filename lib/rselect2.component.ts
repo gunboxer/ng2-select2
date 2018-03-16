@@ -46,7 +46,9 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
         }
         this._value = value;
         const newValue: string  = value;
-        this.setElementValue(newValue);
+        if(this.element) {
+            this.setElementValue(newValue);
+        }
         if (this.entity && !newValue) {
             this.entity = null;
         }
