@@ -39,54 +39,66 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
     }
 
     // value for select2
-    _value: string ;
-    @Input() set value(value: string ) {
-        if (this._value === value || (value === undefined && this._value === undefined) || (value === null && this._value === null)) {
+    _value: string | string[];
+    @Input() set value(value: string | string[]) {
+        if (RSelect2Component.isValuesEqual(this._value, value)) {
             return;
         }
         this._value = value;
-        const newValue: string  = value;
         if(this.element) {
-            this.setElementValue(newValue);
+            this.setElementValue(value);
         }
-        if (this.entity && !newValue) {
+        if (this.entity && !value) {
             this.entity = null;
-        }
-        if (!this.entity || this.getEntityId(this.entity) !== newValue) {
-            for (const id in this.data) {
-                if (this.getEntityId(this.data[id]) === newValue) {
-                    this.entity = this.data[id];
-                    break;
+        } else {
+            if (!RSelect2Component.isValuesEqual(this.getEntityId(this.entity), value)) {
+                if (Array.isArray(value)) {
+                    let newEntity = [];
+                    value.forEach(v => {
+                        let e = null;
+                        for (const i in this.data) {
+                            if (this.getEntityId(this.data[i]) === v) {
+                                e = this.data[i];
+                                break;
+                            }
+                        }
+                        if (e) {
+                            newEntity.push(e);
+                        }
+                    });
+                    this.entity = newEntity;
+                } else {
+                    for (const i in this.data) {
+                        if (this.getEntityId(this.data[i]) === value) {
+                            this.entity = this.data[i];
+                            break;
+                        }
+                    }
                 }
             }
         }
-        this.emitValue(newValue);
+        this.emitValue(value);
     }
-    get value(): string  {
+    get value(): string | string[] {
         return this._value;
     }
 
-    _entity: S2Option;
-    @Input() set entity(entity: S2Option) {
-        if (this._entity === entity || (entity === undefined && this._entity === undefined) || (entity === null && this._entity === null)) {
+    _entity: S2Option | S2Option[];
+    @Input() set entity(entity: S2Option | S2Option[]) {
+        if (RSelect2Component.isValuesEqual(this._entity, entity)) {
             return;
         }
         this._entity = entity;
-        const newValue: S2Option = entity;
-        if (!newValue) {
-            if ((this.value === undefined || this.value === null || this.value === '')) {
-                return;
-            } else {
-                this.value = null;
-            }
+        if (this.value && !entity) {
+            this.value = null;
         } else {
-            const entityId = this.getEntityId(newValue);
-            if (this.value !== entityId || (!this.value && !!entityId)) {
+            const entityId = this.getEntityId(entity);
+            if (!RSelect2Component.isValuesEqual(this.value, entityId)) {
                 this.value = entityId;
             }
         }
     }
-    get entity(): S2Option {
+    get entity(): S2Option | S2Option[] {
         return this._entity;
     }
 
@@ -161,9 +173,9 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
     }
 
     // emitter when value is changed
-    @Output() valueChanged = new EventEmitter<{value: string , data: any}>();
+    @Output() valueChanged = new EventEmitter<{value: string | string[], data: any}>();
 
-    @Output() valueChange = new EventEmitter<string >();
+    @Output() valueChange = new EventEmitter<string | string[]>();
     @Output() entityChange = new EventEmitter<S2Option | S2Option[]>();
 
     private element: JQuery = undefined;
@@ -185,7 +197,7 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
                     this.value = this.element.val();
                     break;
                 case 'select2:unselect':
-                    this.value = null;
+                    this.value = Array.isArray(this.element.val()) ? this.element.val() : null;
                     break;
             }
         });
@@ -204,12 +216,12 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
         this.element.off("select2:select");
     }
 
-    private emitValue(newValue: string) {
+    private emitValue(value: string | string[]) {
         if (this.element) {
-            this.valueChange.emit(newValue);
+            this.valueChange.emit(value);
             this.entityChange.emit(this.entity);
             this.valueChanged.emit({
-                value: newValue,
+                value: value,
                 data: this.element.select2('data')
             });
         }
@@ -287,17 +299,30 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
         }
     }
 
-    private getEntityId(entity: S2Option): string {
-        if (this.idProperty) {
-            return entity[this.idProperty];
+    private getEntityId(entity: S2Option | S2Option[]): string | string[] {
+        if (!entity) {
+            return null;
         }
-        if (this.idGetter) {
-            return this.idGetter(entity);
+        if (Array.isArray(entity)) {
+            if (this.idProperty) {
+                return entity.map(e => e[this.idProperty]);
+            }
+            if (this.idGetter) {
+                return entity.map(e => this.idGetter(e));
+            }
+            return entity.map(e => e.id);
+        } else {
+            if (this.idProperty) {
+                return entity[this.idProperty];
+            }
+            if (this.idGetter) {
+                return this.idGetter(entity);
+            }
+            return entity.id;
         }
-        return entity.id;
     }
 
-    private setElementValue (newValue: string) {
+    private setElementValue (newValue: string | string[]) {
         if(Array.isArray(newValue)) {
             for (let option of this.selector.nativeElement.options) {
                 if (newValue.indexOf(option.value) > -1) {
@@ -309,5 +334,23 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
         }
 
         this.element.trigger('change.select2');
+    }
+
+    private static isValuesEqual(value1: string | string[] | S2Option | S2Option[], value2: string | string[] | S2Option | S2Option[]): boolean {
+        if ((value1 === undefined && value2 === undefined) || (value1 === null && value2 === null)) {
+            return true;
+        }
+        if (!Array.isArray(value1) && !Array.isArray(value2)) {
+            return value1 === value2;
+        }
+        if (Array.isArray(value1) && Array.isArray(value2) && value1.length === value2.length) {
+            for(let i in value1) {
+                if (value1[i] !== value2[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
     }
 }
