@@ -3,7 +3,7 @@ import {
     Output, ViewChild, ViewEncapsulation, Renderer
 } from '@angular/core';
 
-import { S2Option } from './rselect2.interface';
+import {S2Option} from './rselect2.interface';
 
 @Component({
     selector: 'rselect2',
@@ -26,14 +26,15 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
             return;
         }
         this._data = data;
-        if(this.element) {
+        if (this.element) {
             this.initPlugin();
 
             if (this.autoSelect) {
-                this.value = this.element.val();
+                this.setValueFromElement();
             }
         }
     }
+
     get data(): Array<S2Option> {
         return this._data;
     }
@@ -45,7 +46,7 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
             return;
         }
         this._value = value;
-        if(this.element) {
+        if (this.element) {
             this.setElementValue(value);
         }
         if (this.entity && !value) {
@@ -79,6 +80,7 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
         }
         this.emitValue(value);
     }
+
     get value(): string | string[] {
         return this._value;
     }
@@ -98,6 +100,7 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
             }
         }
     }
+
     get entity(): S2Option | S2Option[] {
         return this._entity;
     }
@@ -107,6 +110,7 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
     @Input() set width(width: string) {
         this._width = width;
     }
+
     get width(): string {
         return this._width
     }
@@ -115,10 +119,11 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
     _disabled: boolean = false;
     @Input() set disabled(disabled: boolean) {
         this._disabled = disabled;
-        if(this.element) {
+        if (this.element) {
             this.renderer.setElementProperty(this.selector.nativeElement, 'disabled', disabled);
         }
     }
+
     get disabled(): boolean {
         return this._disabled;
     }
@@ -128,6 +133,7 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
     @Input() set options(options: Select2Options) {
         this._options = options;
     }
+
     get options(): Select2Options {
         return this._options
     }
@@ -136,6 +142,7 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
     @Input() set idProperty(idProperty: string | undefined) {
         this._idProperty = idProperty;
     }
+
     get idProperty(): string | undefined {
         return this._idProperty
     }
@@ -144,6 +151,7 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
     @Input() set textProperty(textProperty: string | undefined) {
         this._textProperty = textProperty;
     }
+
     get textProperty(): string | undefined {
         return this._textProperty
     }
@@ -152,6 +160,7 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
     @Input() set idGetter(idGetter: Function | undefined) {
         this._idGetter = idGetter;
     }
+
     get idGetter(): Function | undefined {
         return this._idGetter
     }
@@ -160,6 +169,7 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
     @Input() set textGetter(textGetter: Function | undefined) {
         this._textGetter = textGetter;
     }
+
     get textGetter(): Function | undefined {
         return this._textGetter
     }
@@ -168,12 +178,13 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
     @Input() set autoSelect(autoSelect: boolean) {
         this._autoSelect = autoSelect;
     }
+
     get autoSelect(): boolean {
         return this._autoSelect
     }
 
     // emitter when value is changed
-    @Output() valueChanged = new EventEmitter<{value: string | string[], data: any}>();
+    @Output() valueChanged = new EventEmitter<{ value: string | string[], data: any }>();
 
     @Output() valueChange = new EventEmitter<string | string[]>();
     @Output() entityChange = new EventEmitter<S2Option | S2Option[]>();
@@ -181,7 +192,8 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
     private element: JQuery = undefined;
     private check: boolean = false;
 
-    constructor(private renderer: Renderer) { }
+    constructor(private renderer: Renderer) {
+    }
 
     ngAfterViewInit() {
         this.element = jQuery(this.selector.nativeElement);
@@ -194,10 +206,14 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
         this.element.on('select2:select select2:unselect', (event: {type: string}) => {
             switch (event.type) {
                 case 'select2:select':
-                    this.value = this.element.val();
+                    this.setValueFromElement();
                     break;
                 case 'select2:unselect':
-                    this.value = Array.isArray(this.element.val()) ? this.element.val() : null;
+                    if (Array.isArray(this.element.val())) {
+                        this.setValueFromElement();
+                    } else {
+                        this.value = null;
+                    }
                     break;
             }
         });
@@ -216,6 +232,76 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
         this.element.off("select2:select");
     }
 
+    private setValueFromElement() {
+        if (!this.element) {
+            return;
+        }
+        const value = this.element.val();
+        if (value) {
+            if (Array.isArray(value)) {
+                if (!this.entity || !Array.isArray(this.entity) ||
+                    this.entity.length !== value.length) {
+                    let equal = true;
+                    for (let i in this.entity) {
+                        if (!this.entity[i] || this.getEntityId(this.entity[i]) !== value[i]) {
+                            equal = false;
+                            break;
+                        }
+                    }
+                    if (!equal) {
+                        this.entity = this.getEntityFromElement(true);
+                    }
+                }
+            } else {
+                if (!this.entity || this.getEntityId(this.entity) !== value) {
+                    this.entity = this.getEntityFromElement(false);
+                }
+            }
+        } else {
+            this.value = null;
+        }
+    }
+
+    private getEntityFromElement(isArray: boolean): S2Option | S2Option[] {
+        const s2entities = this.element.select2('data') as Object[];
+        const entities = [];
+        if (s2entities) {
+            for (let i in s2entities) {
+                const s2entity = s2entities[i];
+                let found = false;
+                if (this.data) {
+                    if (isArray) {
+                        for (const i in this.data) {
+                            if (this.getEntityId(this.data[i]) === s2entity['id']) {
+                                entities.push(this.data[i]);
+                                found = true;
+                            }
+                        }
+                    } else {
+                        for (const i in this.data) {
+                            if (this.getEntityId(this.data[i]) === s2entity['id']) {
+                                return this.data[i];
+                            }
+                        }
+                    }
+                }
+                if (!found) {
+                    const entity = {};
+                    for (let key in s2entity) {
+                        if (['element', "_resultId", "selected"].indexOf(key) === -1)
+                            entity[key] = s2entity[key];
+                    }
+                    if (isArray) {
+                        entities.push(entity);
+                    } else {
+                        return entity as S2Option;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     private emitValue(value: string | string[]) {
         if (this.element) {
             this.valueChange.emit(value);
@@ -228,8 +314,8 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
     }
 
     private initPlugin() {
-        if(!this.element.select2) {
-            if(!this.check) {
+        if (!this.element.select2) {
+            if (!this.check) {
                 this.check = true;
                 console.log("Please add Select2 library (js file) to the project. You can download it from https://github.com/select2/select2/tree/master/dist/js.");
             }
@@ -262,7 +348,7 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
 
         Object.assign(options, this.options);
 
-        if(options.matcher) {
+        if (options.matcher) {
             jQuery.fn.select2.amd.require(['select2/compat/matcher'], (oldMatcher: any) => {
                 options.matcher = oldMatcher(options.matcher);
                 this.element.select2(options);
@@ -279,7 +365,7 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
             this.value = this.getEntityId(this.entity);
         }
 
-        if(this.disabled) {
+        if (this.disabled) {
             this.renderer.setElementProperty(this.selector.nativeElement, 'disabled', this.disabled);
         }
     }
@@ -322,8 +408,8 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
         }
     }
 
-    private setElementValue (newValue: string | string[]) {
-        if(Array.isArray(newValue)) {
+    private setElementValue(newValue: string | string[]) {
+        if (Array.isArray(newValue)) {
             for (let option of this.selector.nativeElement.options) {
                 if (newValue.indexOf(option.value) > -1) {
                     this.renderer.setElementProperty(option, 'selected', 'true');
@@ -344,7 +430,7 @@ export class RSelect2Component implements AfterViewInit, OnDestroy {
             return value1 === value2;
         }
         if (Array.isArray(value1) && Array.isArray(value2) && value1.length === value2.length) {
-            for(let i in value1) {
+            for (let i in value1) {
                 if (value1[i] !== value2[i]) {
                     return false;
                 }
